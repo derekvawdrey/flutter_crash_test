@@ -8,11 +8,27 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "hot reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during the reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
@@ -24,46 +40,22 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
   final String title;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
-
 class _MyHomePageState extends State<MyHomePage> {
-  final _sheet = GlobalKey();
-  final _controller = DraggableScrollableController();
-  final _scrollController = ScrollController();
-  final List<String> _imageUrls = [];
-  bool _isLoading = false;
-  int _currentPage = 0;
-  static const int _itemsPerPage = 10;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadMoreItems();
-    _scrollController.addListener(_scrollListener);
-  }
-
-  void _scrollListener() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-      _loadMoreItems();
-    }
-  }
-
-  void _loadMoreItems() {
-    if (!_isLoading) {
-      setState(() {
-        _isLoading = true;
-        for (int i = 0; i < _itemsPerPage; i++) {
-          _imageUrls.add("https://picsum.photos/200/300?cacheBuster=${_currentPage * _itemsPerPage + i}");
-        }
-        _currentPage++;
-        _isLoading = false;
-      });
-    }
-  }
+  final DraggableScrollableController _controller = DraggableScrollableController();
 
   @override
   Widget build(BuildContext context) {
@@ -72,32 +64,37 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return DraggableScrollableSheet(
-            key: _sheet,
+      body: Stack(
+        children: [
+          Center(child: Text('Main Content')),
+          DraggableScrollableSheet(
             initialChildSize: 0.3,
+            minChildSize: 0.1,
             maxChildSize: 0.85,
-            minChildSize: 60 / constraints.maxHeight,
             expand: true,
             snap: true,
-            snapSizes: [0.3, 0.85],
+            snapSizes: const [0.3, 0.85],
             controller: _controller,
             builder: (BuildContext context, ScrollController scrollController) {
-              return DecoratedBox(
-                decoration: const BoxDecoration(
+              return Container(
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 5,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
                     Container(
                       width: 40,
                       height: 5,
-                      margin: EdgeInsets.symmetric(vertical: 10),
+                      margin: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.grey[300],
                         borderRadius: BorderRadius.circular(2.5),
@@ -105,34 +102,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     Expanded(
                       child: ListView.builder(
-                        itemCount: _imageUrls.length + 1,
+                        controller: scrollController,
+                        itemCount: 50,
                         itemBuilder: (context, index) {
-                          if (index < _imageUrls.length) {
-                            return ImageCard(url: _imageUrls[index]);
-                          } else if (_isLoading) {
-                            return Center(child: CircularProgressIndicator());
-                          } else {
-                            return SizedBox.shrink();
-                          }
+                          return ImageCard(url: "https://picsum.photos/200/300?cacheBuster=$index");
                         },
-                        controller: _scrollController,
-                      )
+                      ),
                     ),
                   ],
                 ),
               );
             },
-          );
-        },
+          ),
+        ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_scrollListener);
-    _scrollController.dispose();
-    _controller.dispose();
-    super.dispose();
   }
 }
